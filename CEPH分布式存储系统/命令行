@@ -11,6 +11,8 @@ setenforce 0
 
 vim /etc/selinux/config
 
+安装并启用企业Linux附加软件包（EPEL）存储库：
+sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 
 ####管理器环境准备#######
 yum install yum-plugin-priorities vim wget -y
@@ -43,6 +45,20 @@ type=rpm-md
 gpgkey=https://download.ceph.com/keys/release.asc
 EOM
 
+/**国内镜像源**/
+cat << EOM > /etc/yum.repos.d/ceph.repo
+[ceph-noarch]
+name=Ceph noarch packages
+baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/noarch/
+enabled=1
+gpgcheck=1
+type=rpm-md
+gpgkey=http://mirrors.aliyun.com/ceph/keys/release.asc
+EOM
+
+export CEPH_DEPLOY_REPO_URL=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7
+export CEPH_DEPLOY_GPG_URL=http://mirrors.aliyun.com/ceph/keys/release.asc
+
 yum update
 yum install ceph-deploy -y
 
@@ -52,10 +68,11 @@ mkdir my-cluster
 cd my-cluster
 ceph-deploy new --cluster-network 192.168.40.0/24 --public-network 192.168.40.0/24 node1
 
-#####如果是单服务器集群######
-# echo "osd crush chooseleaf type = 0" >> ceph.conf  
-
-#####如果是单服务器集群######
+#####如果是单服务器集群 begin######
+vi ceph.conf  
+sd_crush_chooseleaf_type = 0
+osd_pool_default_size = 1
+#####如果是单服务器集群 end######
 
 ceph-deploy install --release nautilus node1
 ceph-deploy mon create-initial
